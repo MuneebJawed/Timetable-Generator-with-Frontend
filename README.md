@@ -5,6 +5,12 @@
 
 The University Scheduling System is an automated timetable generation tool designed to optimize class scheduling while resolving conflicts related to faculty availability, classroom constraints, and overlapping time slots. Built using C++ and advanced data structures, it ensures efficient resource allocation and minimizes administrative workload. Future enhancements include an improved frontend for a better user experience.
 
+## Group Members
+
+1. Muneeb Jawed
+2. Ibrahim Saqib
+3. Rafay Rauf
+
 ## Features
 
 ✅ Automated timetable generation
