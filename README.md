@@ -14,9 +14,13 @@ The University Scheduling System is an automated timetable generation tool desig
 ## Features
 
 ✅ Automated timetable generation
+
 ✅ Conflict detection & resolution
+
 ✅ Optimized scheduling using graphs & backtracking
+
 ✅ Persistent storage for schedule data
+
 ✅ User-friendly interface (Frontend improvements planned)
 
 
