@@ -64,3 +64,864 @@ git add .
 git commit -m "Added new feature"
 ```
 Push your branch and create a pull request!
+
+
+# Milestone 2
+
+## Objective
+To demonstrate working implementations of core data structures with sample input/output and showcase their practical relevance to the problem domain.
+
+## Implemented Data Structures
+
+### 1. AVL Tree
+Used to store and manage course information.
+Maintains balanced height to ensure efficient searching and insertion.
+Each node contains a Course object with a unique ID, course code, credit hours, and semester.
+### 2. Linked List
+Used to manage ordered integer elements (e.g., student roll numbers or course slots).
+Supports insertions and deletions at any point efficiently.
+### 3. Queue
+Used for task or schedule handling (e.g., student registration queue or time-slot allocation).
+Implements standard enqueue and dequeue operations.
+
+## Efficiency Analysis
+
+| Data Structure | Time Complexity (Best/Average/Worst)     | Space Complexity |
+|----------------|-------------------------------------------|------------------|
+| AVL Tree       | O(log n) / O(log n) / O(log n)            | O(n)             |
+| Linked List    | O(1) insert/delete at head, O(n) search   | O(n)             |
+| Queue (Array)  | O(1) enqueue/dequeue (amortized)          | O(n)             |
+
+## Application of class concepts
+
+This project integrates:
+
+  - Balanced trees (AVL) for optimized searching and updates.
+  - Dynamic memory via linked structures.
+  - Queue-based processing to simulate real-time task handling.
+  - Modular OOP principles with constructors, encapsulation, and separation of concerns.
+
+
+## Progress on the project
+
+Below is a sample of the code that is to be implemented in the backend. There will be upcoming changes made to the code in the future along with the code for the frontend (which is still a work in progress)
+
+```
+#include <iostream>
+#include <string>
+#include <vector>
+#include <map>
+#include <set>
+#include <fstream>
+#include <limits>
+#include <algorithm>
+using namespace std;
+
+const vector<string> DAYS = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"};
+const vector<string> CLASSROOMS = {"LH1", "LH2", "LH3", "LH4", "LH5", "LH6", "LH7", "LH8"};
+const int SLOTS_PER_DAY = 8;
+
+struct Course {
+    string courseName;
+    string instructor;
+    string speciality;
+    int duration;
+    int creditHours; // New field for credit hours
+};
+
+struct Slot {
+    string courseName;
+    string instructor;
+    string speciality;
+    string classroom;
+    string day;
+    int slot;
+};
+
+class Node {
+public:
+    Course course;
+    Node* left;
+    Node* right;
+    int height;
+
+    Node(Course c) : course(c), left(nullptr), right(nullptr), height(1) {}
+};
+
+class AVLTree {
+private:
+    Node* root;
+
+    int getHeight(Node* node) {
+        return node == nullptr ? 0 : node->height;
+    }
+
+    int getBalanceFactor(Node* node) {
+        return node == nullptr ? 0 : getHeight(node->left) - getHeight(node->right);
+    }
+
+    Node* rightRotate(Node* y) {
+        Node* x = y->left;
+        Node* T2 = x->right;
+
+        x->right = y;
+        y->left = T2;
+
+        y->height = max(getHeight(y->left), getHeight(y->right)) + 1;
+        x->height = max(getHeight(x->left), getHeight(x->right)) + 1;
+
+        return x;
+    }
+
+    Node* leftRotate(Node* x) {
+        Node* y = x->right;
+        Node* T2 = y->left;
+
+        y->left = x;
+        x->right = T2;
+
+        x->height = max(getHeight(x->left), getHeight(x->right)) + 1;
+        y->height = max(getHeight(y->left), getHeight(y->right)) + 1;
+
+        return y;
+    }
+
+    Node* insert(Node* node, Course course) {
+        if (node == nullptr) {
+            return new Node(course);
+        }
+
+        if (course.courseName < node->course.courseName) {
+            node->left = insert(node->left, course);
+        } else if (course.courseName > node->course.courseName) {
+            node->right = insert(node->right, course);
+        } else {
+            return node; // Duplicate course names not allowed
+        }
+
+        node->height = 1 + max(getHeight(node->left), getHeight(node->right));
+
+        int balance = getBalanceFactor(node);
+
+        if (balance > 1 && course.courseName < node->left->course.courseName) {
+            return rightRotate(node);
+        }
+
+        if (balance < -1 && course.courseName > node->right->course.courseName) {
+            return leftRotate(node);
+        }
+
+        if (balance > 1 && course.courseName > node->left->course.courseName) {
+            node->left = leftRotate(node->left);
+            return rightRotate(node);
+        }
+
+        if (balance < -1 && course.courseName < node->right->course.courseName) {
+            node->right = rightRotate(node->right);
+            return leftRotate(node);
+        }
+
+        return node;
+    }
+
+    Node* deleteNode(Node* root, string courseName) {
+        if (root == nullptr) {
+            return root;
+        }
+
+        if (courseName < root->course.courseName) {
+            root->left = deleteNode(root->left, courseName);
+        } else if (courseName > root->course.courseName) {
+            root->right = deleteNode(root->right, courseName);
+        } else {
+            if ((root->left == nullptr) || (root->right == nullptr)) {
+                Node* temp = root->left ? root->left : root->right;
+                if (temp == nullptr) {
+                    temp = root;
+                    root = nullptr;
+                } else {
+                    *root = *temp;
+                }
+                delete temp;
+            } else {
+                Node* temp = getMinValueNode(root->right);
+                root->course = temp->course;
+                root->right = deleteNode(root->right, temp->course.courseName);
+            }
+        }
+
+        if (root == nullptr) {
+            return root;
+        }
+
+        root->height = 1 + max(getHeight(root->left), getHeight(root->right));
+        int balance = getBalanceFactor(root);
+
+        if (balance > 1 && getBalanceFactor(root->left) >= 0) {
+            return rightRotate(root);
+        }
+
+        if (balance > 1 && getBalanceFactor(root->left) < 0) {
+            root->left = leftRotate(root->left);
+            return rightRotate(root);
+        }
+
+        if (balance < -1 && getBalanceFactor(root->right) <= 0) {
+            return leftRotate(root);
+        }
+
+        if (balance < -1 && getBalanceFactor(root->right) > 0) {
+            root->right = rightRotate(root->right);
+            return leftRotate(root);
+        }
+
+        return root;
+    }
+
+    Node* getMinValueNode(Node* node) {
+        Node* current = node;
+        while (current->left != nullptr) {
+            current = current->left;
+        }
+        return current;
+    }
+
+    void inOrder(Node* node, vector<Course>& courses) {
+        if (node != nullptr) {
+            inOrder(node->left, courses);
+            courses.push_back(node->course);
+            inOrder(node->right, courses);
+        }
+    }
+
+    Node* search(Node* node, string courseName) {
+        if (node == nullptr || node->course.courseName == courseName) {
+            return node;
+        }
+        if (courseName < node->course.courseName) {
+            return search(node->left, courseName);
+        }
+        return search(node->right, courseName);
+    }
+
+public:
+    AVLTree() : root(nullptr) {}
+
+    void insertCourse(Course course) {
+        root = insert(root, course);
+    }
+
+    void deleteCourse(string courseName) {
+        root = deleteNode(root, courseName);
+    }
+
+    void getAllCourses(vector<Course>& courses) {
+        inOrder(root, courses);
+    }
+
+    void searchCourse(string courseName) {
+        Node* result = search(root, courseName);
+        if (result != nullptr) {
+            cout << "Course found: " << result->course.courseName << ", Instructor: " << result->course.instructor << ", Speciality: " << result->course.speciality << ", Duration: " << result->course.duration << " hours, Credit Hours: " << result->course.creditHours << endl;
+        } else {
+            cout << "Course not found." << endl;
+        }
+    }
+};
+
+
+class ListNode {
+public:
+    int data;
+    ListNode* next;
+
+    ListNode(int val) : data(val), next(nullptr) {}
+};
+
+class LinkedList {
+private:
+    ListNode* head;
+
+public:
+    LinkedList() : head(nullptr) {}
+
+    void insertAtEnd(int val) 
+    {
+        ListNode* newNode = new ListNode(val);
+        if (!head)
+         {
+            head = newNode;
+        }
+         else
+         {
+            ListNode* temp = head;
+            while (temp->next) {
+                temp = temp->next;
+            }
+            temp->next = newNode;
+        }
+    }
+
+    void insertAtStart(int val)
+    {
+        ListNode* newNode = new ListNode(val);
+        newNode->next = head;
+        head = newNode;
+    }
+
+    void insertAtPosition(int val, int pos)
+    {
+        ListNode* newNode = new ListNode(val);
+        if (pos == 0) {
+            newNode->next = head;
+            head = newNode;
+            return;
+        }
+        ListNode* temp = head;
+        for (int i = 0; temp != nullptr && i < pos - 1; i++) {
+            temp = temp->next;
+        }
+        if (temp == nullptr) {
+            cout << "Position out of bounds!" << endl;
+            return;
+        }
+        newNode->next = temp->next;
+        temp->next = newNode;
+    }
+
+    void deleteFromStart() 
+    {
+        if (!head) {
+            cout << "List is empty!" << endl;
+            return;
+        }
+        ListNode* temp = head;
+        head = head->next;
+        delete temp;
+    }
+
+    void deleteFromEnd()
+    {
+        if (!head) {
+            cout << "List is empty!" << endl;
+            return;
+        }
+        if (!head->next)
+        {
+            delete head;
+            head = nullptr;
+            return;
+        }
+        ListNode* temp = head;
+        while (temp->next->next)
+        {
+            temp = temp->next;
+        }
+        delete temp->next;
+        temp->next = nullptr;
+    }
+
+    void deleteFromPosition(int pos)
+    {
+        if (!head) {
+            cout << "List is empty!" << endl;
+            return;
+        }
+        if (pos == 0)
+        {
+            ListNode* temp = head;
+            head = head->next;
+            delete temp;
+            return;
+        }
+        ListNode* temp = head;
+        for (int i = 0; temp != nullptr && i < pos - 1; i++) 
+        {
+            temp = temp->next;
+        }
+        if (temp == nullptr || temp->next == nullptr)
+        {
+            cout << "Position out of bounds!" << endl;
+            return;
+        }
+        ListNode* toDelete = temp->next;
+        temp->next = toDelete->next;
+        delete toDelete;
+    }
+
+    void reverse()
+     {
+        ListNode* prev = nullptr;
+        ListNode* current = head;
+        ListNode* next = nullptr;
+        while (current)
+         {
+            next = current->next;
+            current->next = prev;
+            prev = current;
+            current = next;
+        }
+        head = prev;
+    }
+
+    void search(int val)
+     {
+        ListNode* temp = head;
+        int position = 0;
+        while (temp)
+         {
+            if (temp->data == val)
+             {
+                cout << "Value " << val << " found at position " << position << endl;
+                return;
+            }
+            temp = temp->next;
+            position++;
+        }
+        cout << "Value " << val << " not found in the list." << endl;
+    }
+
+    void display() {
+        ListNode* temp = head;
+        while (temp)
+         {
+            cout << temp->data << " -> ";
+            temp = temp->next;
+        }
+        cout << "NULL" << endl;
+    }
+};
+
+
+class QueueNode {
+public:
+    int data;
+
+    QueueNode* next;
+
+    QueueNode(int val) : data(val), next(nullptr) {}
+};
+
+
+class Queue {
+private:
+    QueueNode* front;
+    QueueNode* rear;
+
+public:
+    Queue() : front(nullptr), rear(nullptr) {}
+
+    void enqueue(int val)
+     {
+        QueueNode* newNode = new QueueNode(val);
+        if (!rear) 
+        {
+            front = rear = newNode;
+        } else
+         {
+            rear->next = newNode;
+            rear = newNode;
+        }
+    }
+
+    void dequeue()
+     {
+        if (!front)
+         {
+            cout << "Queue is empty!" << endl;
+            return;
+        }
+        QueueNode* temp = front;
+        front = front->next;
+        if (!front)
+         {
+            rear = nullptr;
+        }
+        delete temp;
+    }
+
+    int peek()
+     {
+        if (!front)
+         {
+            cout << "Queue is empty!" << endl;
+            return -1;
+        }
+        return front->data;
+    }
+
+    bool isEmpty()
+     {
+        return front == nullptr;
+    }
+
+    void reverse() 
+    {
+        if (!front) return;
+        QueueNode* prev = nullptr;
+        QueueNode* current = front;
+        QueueNode* next = nullptr;
+        rear = front;
+        while (current) {
+            next = current->next;
+            current->next = prev;
+            prev = current;
+            current = next;
+        }
+        front = prev;
+    }
+
+    void display()
+     {
+        QueueNode* temp = front;
+        while (temp) {
+            cout << temp->data << " <- ";
+            temp = temp->next;
+        }
+        cout << "NULL" << endl;
+    }
+
+    int size()
+     {
+        int count = 0;
+        QueueNode* temp = front;
+        while (temp) {
+            count++;
+            temp = temp->next;
+        }
+        return count;
+    }
+};
+
+// Additional functions added for comprehensive coverage.
+
+class Scheduler
+ {
+private:
+    AVLTree courseTree;
+    map<string, vector<vector<Slot>>> timetable;
+
+    bool isSlotAvailable(const string& day, int roomIndex, int slotIndex)  //check any slot avaliable
+     {
+        return timetable[day][roomIndex][slotIndex].courseName.empty();
+    }
+
+    bool isInstructorAvailable(const string& instructor, const string& day, int slotIndex) //check instructor ava;aoble
+    {
+        for (size_t room = 0; room < CLASSROOMS.size(); ++room) 
+        {
+            if (timetable[day][room][slotIndex].instructor == instructor)
+             {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    void detectConflicts() {    //slots should not be same at same time
+        map<string, set<pair<string, int>>> instructorSchedule;
+        for (const auto& day : DAYS)
+         {
+            for (size_t room = 0; room < CLASSROOMS.size(); ++room)
+             {
+                for (int slot = 0; slot < SLOTS_PER_DAY; ++slot)
+                 {
+                    const auto& slotData = timetable[day][room][slot];
+                    if (!slotData.instructor.empty()) 
+                    {
+                        auto& schedule = instructorSchedule[slotData.instructor];
+                        if (!schedule.insert({day, slot}).second) 
+                        {
+                            cout << "Conflict detected for instructor " << slotData.instructor << " on " << day << ", Slot " << slot + 1 << " in Classroom " << CLASSROOMS[room] << endl;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+void saveTimetableToFile() {
+    ofstream htmlFile("timetable.html");
+    if (!htmlFile) {
+        cerr << "Error: Unable to open file for writing timetable." << endl;
+        return;
+    }
+
+    htmlFile << "<!DOCTYPE html><html><head><title>University Timetable</title>";
+    htmlFile << "<style>";
+
+    htmlFile << "table {border-collapse: collapse; width: 100%;}";
+
+    htmlFile << "th, td {border: 1px solid black; padding: 8px; text-align: center;}";
+
+    htmlFile << "th {background-color: #f2f2f2;}";
+
+    htmlFile << "</style></head><body>";
+
+    htmlFile << "<h1>University Timetable</h1>";
+
+    htmlFile << "<table><tr><th>Day</th><th>Slot</th>";
+
+    for (const auto& classroom : CLASSROOMS) 
+    {
+        htmlFile << "<th>" << classroom << "</th>";
+    }
+
+    htmlFile << "</tr>";
+
+    for (const auto& day : DAYS) {
+        for (int slot = 0; slot < SLOTS_PER_DAY; ++slot) 
+        {
+            htmlFile << "<tr>";
+            if (slot == 0) 
+            {
+                htmlFile << "<td rowspan='" << SLOTS_PER_DAY << "'>" << day << "</td>";
+            }
+            htmlFile << "<td>Slot " << slot + 1 << "</td>";
+
+            for (size_t room = 0; room < CLASSROOMS.size(); ++room) {
+                const auto& slotData = timetable[day][room][slot];
+                if (!slotData.courseName.empty()) {
+                    htmlFile << "<td>" << slotData.courseName << " (" << slotData.instructor << ")</td>";
+                } else {
+                    htmlFile << "<td>Free</td>";
+                }
+            }
+            htmlFile << "</tr>";
+        }
+    }
+
+    htmlFile << "</table></body></html>";
+
+    htmlFile.close();
+
+    cout << "Timetable saved to timetable.html successfully." << endl;
+}
+
+    void allocateCourse(const Course& course)    //allocate courses according to their day/classroom/slots(credit hours)
+     {
+        int classesRemaining = course.creditHours;
+        for (const auto& day : DAYS)
+         {
+            for (size_t room = 0; room < CLASSROOMS.size(); ++room) 
+            {
+                for (int slot = 0; slot < SLOTS_PER_DAY; ++slot)
+                 {
+                    if (classesRemaining <= 0) return;
+                    if (isSlotAvailable(day, room, slot) && isInstructorAvailable(course.instructor, day, slot)) {
+                        timetable[day][room][slot] = {
+                            course.courseName, course.instructor, course.speciality, CLASSROOMS[room], day, slot
+                        };
+                        --classesRemaining; // reduce credit hour after allocating
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (classesRemaining > 0) {
+            cout << "Unable to allocate all classes for course: " << course.courseName << endl;
+        }
+    }
+
+public:
+    Scheduler() {
+        for (const auto& day : DAYS) {
+            timetable[day] = vector<vector<Slot>>(CLASSROOMS.size(), vector<Slot>(SLOTS_PER_DAY));
+        }
+    }
+
+    void addCourse(string courseName, string instructor, string speciality, int duration, int creditHours) 
+    {
+        Course course = {courseName, instructor, speciality, duration, creditHours};
+        courseTree.insertCourse(course);  //put values in AVL Tree
+    }
+
+    void deleteCourse(string courseName)
+     {
+        courseTree.deleteCourse(courseName);
+    }
+
+    void searchCourse(string courseName)
+     {
+        courseTree.searchCourse(courseName);
+    }
+
+    void displayCourses() 
+    {
+        vector<Course> courses;
+        courseTree.getAllCourses(courses);
+        for (const auto& course : courses) {
+            cout << "Course Name: " << course.courseName << ", Instructor: " << course.instructor << ", Speciality: " << course.speciality << ", Duration: " << course.duration << " hours, Credit Hours: " << course.creditHours << endl;
+        }
+    }
+
+    void generateTimetable()
+     {
+        vector<Course> courses;
+        courseTree.getAllCourses(courses);
+
+        sort(courses.begin(), courses.end(), [](const Course& a, const Course& b) {
+            return a.duration > b.duration;
+        }
+        );
+
+        for (const auto& course : courses)
+         {
+            allocateCourse(course);
+        }
+
+        detectConflicts();
+        saveTimetableToFile();
+    }
+
+    void displayInstructorSchedule(const string& instructor)  //display timetable for specific instructor of complete week
+    {
+        cout << "Schedule for Instructor: " << instructor << endl;
+        for (const auto& day : DAYS) {
+            cout << "Day: " << day << endl;
+            for (size_t room = 0; room < CLASSROOMS.size(); ++room) 
+            {
+                for (int slot = 0; slot < SLOTS_PER_DAY; ++slot)
+                 {
+                    const auto& slotData = timetable[day][room][slot];
+                    if (slotData.instructor == instructor)
+                     {
+                        cout << "  Slot " << slot + 1 << ": " << slotData.courseName << " in " << slotData.classroom << endl;
+                    }
+                }
+            }
+        }
+    }
+
+    void inputCoursesFromUser()
+     {
+        int numCourses;
+        cout << "Enter number of courses to add: ";
+        cin >> numCourses;
+        for (int i = 0; i < numCourses; ++i)
+         {
+            string courseName, instructor, speciality;
+            int duration, creditHours;
+
+            cout << "Enter Course Name: ";
+
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            getline(cin, courseName);
+
+            cout << "Enter Instructor Name: ";
+            getline(cin, instructor);
+
+            cout << "Enter Speciality: ";
+            getline(cin, speciality);
+
+            cout << "Enter Duration (hours): ";
+            cin >> duration;
+            cout << "Enter Credit Hours: ";
+            cin >> creditHours;
+
+            addCourse(courseName, instructor, speciality, duration, creditHours);
+        }
+    }
+
+    void inputCoursesFromFile(const string& filePath) {
+    ifstream inFile(filePath);
+    if (!inFile) {
+        cerr << "Error: Unable to open file " << filePath << endl;
+        return;
+    }
+
+    string courseName, instructor, speciality;
+    int duration, creditHours;
+
+    while (true) {
+
+        if (!getline(inFile, courseName)) break; // Read course name
+
+        if (!getline(inFile, instructor)) break;// Read instructor name
+
+        if (!getline(inFile, speciality)) break; // Read speciality
+
+        if (!(inFile >> duration)) break; // Read duration
+
+        if (!(inFile >> creditHours)) break; // Read credit hours
+
+        inFile.ignore(numeric_limits<streamsize>::max(), '\n'); // Clear the spacing
+
+        Course course = {courseName, instructor, speciality, duration, creditHours};
+
+        addCourse(course.courseName, course.instructor, course.speciality, course.duration, course.creditHours);
+
+        cout << "Loaded Course: " << course.courseName << " by " << course.instructor 
+             << " (" << course.speciality << "), Duration: " << course.duration 
+             << ", Credit Hours: " << course.creditHours << endl; // Debug log
+    }
+
+    inFile.close();
+    cout << "Courses successfully loaded from file." << endl;
+    }
+
+    void displayTimetable()
+     {
+        cout << "============================== Timetable ==============================" << endl;
+        for (const auto& day : DAYS)
+         {
+            cout << "Day: " << day << endl;
+            cout << "-----------------------------------------------------------------------" << endl;
+            cout << "Slot\t| ";
+
+            for (const auto& classroom : CLASSROOMS)
+             {
+                cout << classroom << "\t| ";
+            }
+            cout << "\n-----------------------------------------------------------------------" << endl;
+
+            for (int slot = 0; slot < SLOTS_PER_DAY; ++slot) {
+
+                cout << "Slot " << slot + 1 << "\t| ";
+
+                for (size_t room = 0; room < CLASSROOMS.size(); ++room) {
+                    const auto& slotData = timetable[day][room][slot];
+
+                    if (!slotData.courseName.empty()) 
+                    {
+                        cout << slotData.courseName.substr(0, 5) << " (" << slotData.instructor.substr(0, 3) << ")\t| ";
+                    } else {
+                        cout << "Free\t| ";
+                    }
+                }
+                cout << "\n";
+            }
+            cout << "=======================================================================" << endl;
+        }
+    }
+};
+
+
+int main() {
+    Scheduler scheduler;
+
+    string filePath = "courses_info.txt";
+
+    scheduler.inputCoursesFromFile(filePath);
+
+    scheduler.displayCourses();
+
+    scheduler.generateTimetable();
+
+    scheduler.displayTimetable();
+
+
+    string instructor;
+    cout << "Enter instructor name to view their schedule: ";
+
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    getline(cin, instructor);
+
+    scheduler.displayInstructorSchedule(instructor);
+
+    return 0;
+}
+
+```
