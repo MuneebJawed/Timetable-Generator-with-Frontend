@@ -1,0 +1,25 @@
+Introduction to Programming
+John Smith
+Computer Science
+40
+4
+Data Structures
+Jane Doe
+Computer Science
+45
+3
+Calculus I
+Alan Turing
+Mathematics
+50
+4
+Physics I
+Marie Curie
+Physics
+40
+3
+English Literature
+William Shakespeare
+Literature
+30
+2
