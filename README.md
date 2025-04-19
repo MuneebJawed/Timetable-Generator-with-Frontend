@@ -104,7 +104,7 @@ This project integrates:
 
 ## Progress on the project
 
-Below is a sample of the code that is to be implemented in the backend. There will be upcoming changes made to the code in the future along with the code for the frontend (which is still a work in progress)
+Below is a sample of the code that is to be implemented in the backend. There will be upcoming changes made to the code in the future along with the code for the frontend (which is still a work in progress). Run the code inside any C++ compiler, but make sure to have the courses_info.txt file downloaded in the same location with the C++ file.
 
 ```
 #include <iostream>
@@ -167,8 +167,8 @@ private:
         x->right = y;
         y->left = T2;
 
-        y->height = max(getHeight(y->left), getHeight(y->right)) + 1;
-        x->height = max(getHeight(x->left), getHeight(x->right)) + 1;
+        y->height = std::max(getHeight(y->left), getHeight(y->right)) + 1;
+        x->height = std::max(getHeight(x->left), getHeight(x->right)) + 1;
 
         return x;
     }
@@ -180,8 +180,8 @@ private:
         y->left = x;
         x->right = T2;
 
-        x->height = max(getHeight(x->left), getHeight(x->right)) + 1;
-        y->height = max(getHeight(y->left), getHeight(y->right)) + 1;
+        x->height = std::max(getHeight(x->left), getHeight(x->right)) + 1;
+        y->height = std::max(getHeight(y->left), getHeight(y->right)) + 1;
 
         return y;
     }
@@ -199,7 +199,7 @@ private:
             return node; // Duplicate course names not allowed
         }
 
-        node->height = 1 + max(getHeight(node->left), getHeight(node->right));
+        node->height = 1 + std::max(getHeight(node->left), getHeight(node->right));
 
         int balance = getBalanceFactor(node);
 
@@ -224,7 +224,7 @@ private:
         return node;
     }
 
-    Node* deleteNode(Node* root, string courseName) {
+    Node* deleteNode(Node* root, std::string courseName) {
         if (root == nullptr) {
             return root;
         }
@@ -254,7 +254,7 @@ private:
             return root;
         }
 
-        root->height = 1 + max(getHeight(root->left), getHeight(root->right));
+        root->height = 1 + std::max(getHeight(root->left), getHeight(root->right));
         int balance = getBalanceFactor(root);
 
         if (balance > 1 && getBalanceFactor(root->left) >= 0) {
@@ -286,7 +286,7 @@ private:
         return current;
     }
 
-    void inOrder(Node* node, vector<Course>& courses) {
+    void inOrder(Node* node, std::vector<Course>& courses) {
         if (node != nullptr) {
             inOrder(node->left, courses);
             courses.push_back(node->course);
@@ -294,7 +294,7 @@ private:
         }
     }
 
-    Node* search(Node* node, string courseName) {
+    Node* search(Node* node, std::string courseName) {
         if (node == nullptr || node->course.courseName == courseName) {
             return node;
         }
@@ -304,27 +304,39 @@ private:
         return search(node->right, courseName);
     }
 
+    void freeNodes(Node* node) {
+        if (node != nullptr) {
+            freeNodes(node->left);
+            freeNodes(node->right);
+            delete node;
+        }
+    }
+
 public:
     AVLTree() : root(nullptr) {}
+
+    ~AVLTree() {
+        freeNodes(root);
+    }
 
     void insertCourse(Course course) {
         root = insert(root, course);
     }
 
-    void deleteCourse(string courseName) {
+    void deleteCourse(std::string courseName) {
         root = deleteNode(root, courseName);
     }
 
-    void getAllCourses(vector<Course>& courses) {
+    void getAllCourses(std::vector<Course>& courses) {
         inOrder(root, courses);
     }
 
-    void searchCourse(string courseName) {
+    void searchCourse(std::string courseName) {
         Node* result = search(root, courseName);
         if (result != nullptr) {
-            cout << "Course found: " << result->course.courseName << ", Instructor: " << result->course.instructor << ", Speciality: " << result->course.speciality << ", Duration: " << result->course.duration << " hours, Credit Hours: " << result->course.creditHours << endl;
+            std::cout << "Course found: " << result->course.courseName << ", Instructor: " << result->course.instructor << ", Speciality: " << result->course.speciality << ", Duration: " << result->course.duration << " hours, Credit Hours: " << result->course.creditHours << std::endl;
         } else {
-            cout << "Course not found." << endl;
+            std::cout << "Course not found." << std::endl;
         }
     }
 };
@@ -699,29 +711,38 @@ void saveTimetableToFile() {
     cout << "Timetable saved to timetable.html successfully." << endl;
 }
 
-    void allocateCourse(const Course& course)    //allocate courses according to their day/classroom/slots(credit hours)
+    void allocateCourse(const Course& course, size_t startDayIndex = 0)    //allocate courses according to their day/classroom/slots(credit hours)
      {
         int classesRemaining = course.creditHours;
-        for (const auto& day : DAYS)
-         {
-            for (size_t room = 0; room < CLASSROOMS.size(); ++room) 
-            {
-                for (int slot = 0; slot < SLOTS_PER_DAY; ++slot)
-                 {
-                    if (classesRemaining <= 0) return;
+        size_t dayIndex = startDayIndex;
+        size_t daysCount = DAYS.size();
+        int noAllocationCount = 0;
+        while (classesRemaining > 0) {
+            const string& day = DAYS[dayIndex];
+            bool allocated = false;
+            for (size_t room = 0; room < CLASSROOMS.size(); ++room) {
+                for (int slot = 0; slot < SLOTS_PER_DAY; ++slot) {
                     if (isSlotAvailable(day, room, slot) && isInstructorAvailable(course.instructor, day, slot)) {
                         timetable[day][room][slot] = {
                             course.courseName, course.instructor, course.speciality, CLASSROOMS[room], day, slot
                         };
                         --classesRemaining; // reduce credit hour after allocating
+                        allocated = true;
                         break;
                     }
                 }
+                if (allocated) break;
             }
-        }
-
-        if (classesRemaining > 0) {
-            cout << "Unable to allocate all classes for course: " << course.courseName << endl;
+            if (!allocated) {
+                noAllocationCount++;
+                if (noAllocationCount >= (int)daysCount) {
+                    cout << "Unable to allocate all classes for course: " << course.courseName << endl;
+                    break;
+                }
+            } else {
+                noAllocationCount = 0;
+            }
+            dayIndex = (dayIndex + 1) % daysCount;
         }
     }
 
@@ -729,6 +750,90 @@ public:
     Scheduler() {
         for (const auto& day : DAYS) {
             timetable[day] = vector<vector<Slot>>(CLASSROOMS.size(), vector<Slot>(SLOTS_PER_DAY));
+        }
+    }
+
+    void editScheduleForDay(const std::string& day) {
+        if (timetable.find(day) == timetable.end()) {
+            std::cout << "Invalid day: " << day << std::endl;
+            return;
+        }
+        std::cout << "Editing schedule for " << day << std::endl;
+
+        while (true) {
+            std::cout << "Current schedule for " << day << ":" << std::endl;
+            std::cout << "Slot\t| ";
+            for (const auto& classroom : CLASSROOMS) {
+                std::cout << classroom << "\t| ";
+            }
+            std::cout << std::endl;
+
+            for (int slot = 0; slot < SLOTS_PER_DAY; ++slot) {
+                std::cout << slot + 1 << "\t| ";
+                for (size_t room = 0; room < CLASSROOMS.size(); ++room) {
+                    const auto& slotData = timetable[day][room][slot];
+                    if (!slotData.courseName.empty()) {
+                        std::cout << slotData.courseName.substr(0, 5) << " (" << slotData.instructor.substr(0, 3) << ")\t| ";
+                    } else {
+                        std::cout << "Free\t| ";
+                    }
+                }
+                std::cout << std::endl;
+            }
+
+            std::cout << "Enter slot number to edit (1-" << SLOTS_PER_DAY << ", or 0 to exit): ";
+            int slotNum;
+            std::cin >> slotNum;
+            if (slotNum == 0) {
+                break;
+            }
+            if (slotNum < 1 || slotNum > SLOTS_PER_DAY) {
+                std::cout << "Invalid slot number." << std::endl;
+                continue;
+            }
+            int slotIndex = slotNum - 1;
+
+            std::cout << "Enter classroom number to edit (1-" << CLASSROOMS.size() << "): ";
+            int classroomNum;
+            std::cin >> classroomNum;
+            if (classroomNum < 1 || classroomNum > (int)CLASSROOMS.size()) {
+                std::cout << "Invalid classroom number." << std::endl;
+                continue;
+            }
+            int classroomIndex = classroomNum - 1;
+
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+            std::cout << "Current slot info: ";
+            const auto& currentSlot = timetable[day][classroomIndex][slotIndex];
+            if (!currentSlot.courseName.empty()) {
+                std::cout << currentSlot.courseName << " by " << currentSlot.instructor << std::endl;
+            } else {
+                std::cout << "Free" << std::endl;
+            }
+
+            std::cout << "Enter new course name (or leave empty to clear slot): ";
+            std::string newCourseName;
+            std::getline(std::cin, newCourseName);
+
+            if (newCourseName.empty()) {
+                // Clear slot
+                timetable[day][classroomIndex][slotIndex] = Slot{};
+                std::cout << "Slot cleared." << std::endl;
+            } else {
+                std::cout << "Enter instructor name: ";
+                std::string newInstructor;
+                std::getline(std::cin, newInstructor);
+
+                std::cout << "Enter speciality: ";
+                std::string newSpeciality;
+                std::getline(std::cin, newSpeciality);
+
+                timetable[day][classroomIndex][slotIndex] = Slot{
+                    newCourseName, newInstructor, newSpeciality, CLASSROOMS[classroomIndex], day, slotIndex
+                };
+                std::cout << "Slot updated." << std::endl;
+            }
         }
     }
 
@@ -757,7 +862,7 @@ public:
         }
     }
 
-    void generateTimetable()
+    void generateTimetable(size_t startDayIndex = 0)
      {
         vector<Course> courses;
         courseTree.getAllCourses(courses);
@@ -769,7 +874,7 @@ public:
 
         for (const auto& course : courses)
          {
-            allocateCourse(course);
+            allocateCourse(course, startDayIndex);
         }
 
         detectConflicts();
@@ -902,26 +1007,60 @@ public:
 int main() {
     Scheduler scheduler;
 
-    string filePath = "courses_info.txt";
+    std::string filePath = "courses_info.txt";
 
     scheduler.inputCoursesFromFile(filePath);
 
     scheduler.displayCourses();
 
-    scheduler.generateTimetable();
+    std::cout << "Enter starting day for schedule allocation (0=Monday, 1=Tuesday, ..., 4=Friday): ";
+    int startDayInput;
+    while (!(std::cin >> startDayInput) || startDayInput < 0 || startDayInput >= (int)DAYS.size()) {
+        std::cout << "Invalid input. Please enter a number between 0 and " << (int)DAYS.size() - 1 << ": ";
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    }
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+    scheduler.generateTimetable(static_cast<size_t>(startDayInput));
 
     scheduler.displayTimetable();
 
+    while (true) {
+        std::cout << "Options:\n1. View instructor schedule\n2. Edit schedule for a day\n3. Show full timetable\n4. Exit\nEnter choice: ";
+        int choice;
+        if (!(std::cin >> choice)) {
+            std::cout << "Invalid input. Please enter a number between 1 and 4." << std::endl;
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            continue;
+        }
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
-    string instructor;
-    cout << "Enter instructor name to view their schedule: ";
-
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
-    getline(cin, instructor);
-
-    scheduler.displayInstructorSchedule(instructor);
+        if (choice == 1) {
+            std::string instructor;
+            std::cout << "Enter instructor name: ";
+            std::getline(std::cin, instructor);
+            scheduler.displayInstructorSchedule(instructor);
+        } else if (choice == 2) {
+            std::string day;
+            std::cout << "Enter day to edit (e.g., Monday): ";
+            std::getline(std::cin, day);
+            scheduler.editScheduleForDay(day);
+        } else if (choice == 3) {
+            std::cout << "Displaying full timetable:" << std::endl;
+            scheduler.displayTimetable();
+        } else if (choice == 4) {
+            std::cout << "Exiting program. Here is the full created timetable:" << std::endl;
+            scheduler.displayTimetable();
+            break;
+        } else {
+            std::cout << "Invalid choice. Please enter a number between 1 and 4." << std::endl;
+        }
+    }
 
     return 0;
 }
+
 
 ```
