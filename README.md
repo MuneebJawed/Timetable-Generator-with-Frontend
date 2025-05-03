@@ -121,6 +121,21 @@ const vector<string> DAYS = {"Monday", "Tuesday", "Wednesday", "Thursday", "Frid
 const vector<string> CLASSROOMS = {"LH1", "LH2", "LH3", "LH4", "LH5", "LH6", "LH7", "LH8"};
 const int SLOTS_PER_DAY = 8;
 
+// Helper functions for string trimming and case conversion
+string toLowerCase(const string& str) {
+    string result = str;
+    transform(result.begin(), result.end(), result.begin(), ::tolower);
+    return result;
+}
+
+string trim(const string& str) {
+    size_t first = str.find_first_not_of(" \t\n\r\f\v");
+    if (first == string::npos)
+        return "";
+    size_t last = str.find_last_not_of(" \t\n\r\f\v");
+    return str.substr(first, (last - first + 1));
+}
+
 struct Course {
     string courseName;
     string instructor;
@@ -612,6 +627,7 @@ class Scheduler
 private:
     AVLTree courseTree;
     map<string, vector<vector<Slot>>> timetable;
+    map<string, string> instructorNameMap; // lowercase -> canonical case
 
     bool isSlotAvailable(const string& day, int roomIndex, int slotIndex)  //check any slot avaliable
      {
@@ -620,9 +636,10 @@ private:
 
     bool isInstructorAvailable(const string& instructor, const string& day, int slotIndex) //check instructor ava;aoble
     {
+        string instructorLower = toLowerCase(trim(instructor));
         for (size_t room = 0; room < CLASSROOMS.size(); ++room) 
         {
-            if (timetable[day][room][slotIndex].instructor == instructor)
+            if (toLowerCase(trim(timetable[day][room][slotIndex].instructor)) == instructorLower)
              {
                 return false;
             }
@@ -723,9 +740,9 @@ void saveTimetableToFile() {
             for (size_t room = 0; room < CLASSROOMS.size(); ++room) {
                 for (int slot = 0; slot < SLOTS_PER_DAY; ++slot) {
                     if (isSlotAvailable(day, room, slot) && isInstructorAvailable(course.instructor, day, slot)) {
-                        timetable[day][room][slot] = {
-                            course.courseName, course.instructor, course.speciality, CLASSROOMS[room], day, slot
-                        };
+                timetable[day][room][slot] = {
+                    course.courseName, toLowerCase(trim(course.instructor)), course.speciality, CLASSROOMS[room], day, slot
+                };
                         --classesRemaining; // reduce credit hour after allocating
                         allocated = true;
                         break;
@@ -736,7 +753,7 @@ void saveTimetableToFile() {
             if (!allocated) {
                 noAllocationCount++;
                 if (noAllocationCount >= (int)daysCount) {
-                    cout << "Unable to allocate all classes for course: " << course.courseName << endl;
+                    cout << "Unable to allocate all classes for course: " << course.courseName << ". Please check availability and try again." << endl;
                     break;
                 }
             } else {
@@ -753,15 +770,29 @@ public:
         }
     }
 
-    void editScheduleForDay(const std::string& day) {
-        if (timetable.find(day) == timetable.end()) {
-            std::cout << "Invalid day: " << day << std::endl;
+    void editScheduleForDay(const std::string& dayInput) {
+        string day = dayInput;
+        // Normalize day input to lowercase for case-insensitive comparison
+        transform(day.begin(), day.end(), day.begin(), ::tolower);
+
+        // Map of lowercase day names to proper case
+        map<string, string> dayMap = {
+            {"monday", "Monday"},
+            {"tuesday", "Tuesday"},
+            {"wednesday", "Wednesday"},
+            {"thursday", "Thursday"},
+            {"friday", "Friday"}
+        };
+
+        if (dayMap.find(day) == dayMap.end()) {
+            std::cout << "Invalid day: " << dayInput << std::endl;
             return;
         }
-        std::cout << "Editing schedule for " << day << std::endl;
+        string properDay = dayMap[day];
+        std::cout << "Editing schedule for " << properDay << std::endl;
 
         while (true) {
-            std::cout << "Current schedule for " << day << ":" << std::endl;
+            std::cout << "Current schedule for " << properDay << ":" << std::endl;
             std::cout << "Slot\t| ";
             for (const auto& classroom : CLASSROOMS) {
                 std::cout << classroom << "\t| ";
@@ -771,7 +802,7 @@ public:
             for (int slot = 0; slot < SLOTS_PER_DAY; ++slot) {
                 std::cout << slot + 1 << "\t| ";
                 for (size_t room = 0; room < CLASSROOMS.size(); ++room) {
-                    const auto& slotData = timetable[day][room][slot];
+                    const auto& slotData = timetable[properDay][room][slot];
                     if (!slotData.courseName.empty()) {
                         std::cout << slotData.courseName.substr(0, 5) << " (" << slotData.instructor.substr(0, 3) << ")\t| ";
                     } else {
@@ -805,7 +836,7 @@ public:
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
             std::cout << "Current slot info: ";
-            const auto& currentSlot = timetable[day][classroomIndex][slotIndex];
+            const auto& currentSlot = timetable[properDay][classroomIndex][slotIndex];
             if (!currentSlot.courseName.empty()) {
                 std::cout << currentSlot.courseName << " by " << currentSlot.instructor << std::endl;
             } else {
@@ -818,19 +849,29 @@ public:
 
             if (newCourseName.empty()) {
                 // Clear slot
-                timetable[day][classroomIndex][slotIndex] = Slot{};
+                timetable[properDay][classroomIndex][slotIndex] = Slot{};
                 std::cout << "Slot cleared." << std::endl;
             } else {
                 std::cout << "Enter instructor name: ";
                 std::string newInstructor;
                 std::getline(std::cin, newInstructor);
+                newInstructor = toLowerCase(trim(newInstructor));
+                if (newInstructor.empty()) {
+                    std::cout << "Invalid instructor name. Slot not updated." << std::endl;
+                    continue;
+                }
 
                 std::cout << "Enter speciality: ";
                 std::string newSpeciality;
                 std::getline(std::cin, newSpeciality);
+                newSpeciality = trim(newSpeciality);
+                if (newSpeciality.empty()) {
+                    std::cout << "Invalid speciality. Slot not updated." << std::endl;
+                    continue;
+                }
 
-                timetable[day][classroomIndex][slotIndex] = Slot{
-                    newCourseName, newInstructor, newSpeciality, CLASSROOMS[classroomIndex], day, slotIndex
+                timetable[properDay][classroomIndex][slotIndex] = Slot{
+                    newCourseName, newInstructor, newSpeciality, CLASSROOMS[classroomIndex], properDay, slotIndex
                 };
                 std::cout << "Slot updated." << std::endl;
             }
@@ -839,7 +880,39 @@ public:
 
     void addCourse(string courseName, string instructor, string speciality, int duration, int creditHours) 
     {
-        Course course = {courseName, instructor, speciality, duration, creditHours};
+        // Trim and validate inputs
+        courseName = trim(courseName);
+        speciality = trim(speciality);
+        string instructorOriginal = trim(instructor);
+
+        if (courseName.empty()) {
+            cout << "Error: Course name cannot be empty." << endl;
+            return;
+        }
+        if (instructorOriginal.empty()) {
+            cout << "Error: Instructor name cannot be empty." << endl;
+            return;
+        }
+        if (speciality.empty()) {
+            cout << "Error: Speciality cannot be empty." << endl;
+            return;
+        }
+        if (duration <= 0) {
+            cout << "Error: Duration must be positive." << endl;
+            return;
+        }
+        if (creditHours <= 0) {
+            cout << "Error: Credit hours must be positive." << endl;
+            return;
+        }
+
+        // Normalize instructor name to lowercase for consistent comparison
+        string instructorLower = toLowerCase(instructorOriginal);
+
+        // Store mapping from lowercase to original case
+        instructorNameMap[instructorLower] = instructorOriginal;
+
+        Course course = {courseName, instructorLower, speciality, duration, creditHours};
         courseTree.insertCourse(course);  //put values in AVL Tree
     }
 
@@ -883,7 +956,9 @@ public:
 
     void displayInstructorSchedule(const string& instructor)  //display timetable for specific instructor of complete week
     {
-        cout << "Schedule for Instructor: " << instructor << endl;
+        string instructorLower = toLowerCase(trim(instructor));
+        string displayName = instructorNameMap.count(instructorLower) ? instructorNameMap[instructorLower] : instructor;
+        cout << "Schedule for Instructor: " << displayName << endl;
         for (const auto& day : DAYS) {
             cout << "Day: " << day << endl;
             for (size_t room = 0; room < CLASSROOMS.size(); ++room) 
@@ -891,7 +966,7 @@ public:
                 for (int slot = 0; slot < SLOTS_PER_DAY; ++slot)
                  {
                     const auto& slotData = timetable[day][room][slot];
-                    if (slotData.instructor == instructor)
+                    if (toLowerCase(trim(slotData.instructor)) == instructorLower)
                      {
                         cout << "  Slot " << slot + 1 << ": " << slotData.courseName << " in " << slotData.classroom << endl;
                     }
@@ -917,14 +992,23 @@ public:
 
             cout << "Enter Instructor Name: ";
             getline(cin, instructor);
+            instructor = toLowerCase(trim(instructor));
 
             cout << "Enter Speciality: ";
             getline(cin, speciality);
 
             cout << "Enter Duration (hours): ";
-            cin >> duration;
+            while (!(cin >> duration) || duration <= 0) {
+                cout << "Invalid input. Please enter a positive integer for duration: ";
+                cin.clear();
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            }
             cout << "Enter Credit Hours: ";
-            cin >> creditHours;
+            while (!(cin >> creditHours) || creditHours <= 0) {
+                cout << "Invalid input. Please enter a positive integer for credit hours: ";
+                cin.clear();
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            }
 
             addCourse(courseName, instructor, speciality, duration, creditHours);
         }
@@ -943,14 +1027,53 @@ public:
     while (true) {
 
         if (!getline(inFile, courseName)) break; // Read course name
+        courseName = trim(courseName);
+        if (courseName.empty()) {
+            cerr << "Error: Empty course name in file. Skipping entry." << endl;
+            // Skip rest of entry
+            getline(inFile, instructor);
+            getline(inFile, speciality);
+            inFile >> duration;
+            inFile >> creditHours;
+            inFile.ignore(numeric_limits<streamsize>::max(), '\n');
+            continue;
+        }
 
         if (!getline(inFile, instructor)) break;// Read instructor name
+        instructor = toLowerCase(trim(instructor));
+        if (instructor.empty()) {
+            cerr << "Error: Empty instructor name in file. Skipping entry." << endl;
+            getline(inFile, speciality);
+            inFile >> duration;
+            inFile >> creditHours;
+            inFile.ignore(numeric_limits<streamsize>::max(), '\n');
+            continue;
+        }
 
         if (!getline(inFile, speciality)) break; // Read speciality
+        speciality = trim(speciality);
+        if (speciality.empty()) {
+            cerr << "Error: Empty speciality in file. Skipping entry." << endl;
+            inFile >> duration;
+            inFile >> creditHours;
+            inFile.ignore(numeric_limits<streamsize>::max(), '\n');
+            continue;
+        }
 
         if (!(inFile >> duration)) break; // Read duration
+        if (duration <= 0) {
+            cerr << "Error: Invalid duration in file. Skipping entry." << endl;
+            inFile >> creditHours;
+            inFile.ignore(numeric_limits<streamsize>::max(), '\n');
+            continue;
+        }
 
         if (!(inFile >> creditHours)) break; // Read credit hours
+        if (creditHours <= 0) {
+            cerr << "Error: Invalid credit hours in file. Skipping entry." << endl;
+            inFile.ignore(numeric_limits<streamsize>::max(), '\n');
+            continue;
+        }
 
         inFile.ignore(numeric_limits<streamsize>::max(), '\n'); // Clear the spacing
 
@@ -1061,6 +1184,5 @@ int main() {
 
     return 0;
 }
-
 
 ```
