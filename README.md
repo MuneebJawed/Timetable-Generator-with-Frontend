@@ -1264,3 +1264,22 @@ Below is a table of comparison of algorithms used in our code versus algorithms 
 | Use-case Fit    | Needed for sorted outputs | Better if you only need fast lookups |
 
 
+### Edge Case Testing
+
+
+<img width="655" alt="Screenshot 2025-05-04 at 1 14 24 AM" src="https://github.com/user-attachments/assets/8f604eab-716f-4871-8724-c3bd97889326" />
+
+
+<img width="696" alt="Screenshot 2025-05-04 at 1 14 05 AM" src="https://github.com/user-attachments/assets/2ac1f1ee-eeb2-4860-9f10-c7882c121ac3" />
+
+
+<img width="655" alt="Screenshot 2025-05-04 at 1 14 24 AM" src="https://github.com/user-attachments/assets/d7988ba1-a0e0-4d75-8794-a04045934c4a" />
+
+
+<img width="528" alt="Screenshot 2025-05-04 at 1 14 40 AM" src="https://github.com/user-attachments/assets/ea8a282a-380a-4aa5-bbf6-f0f80962d386" />
+
+
+<img width="457" alt="Screenshot 2025-05-04 at 1 15 03 AM" src="https://github.com/user-attachments/assets/029ea27d-14bc-4550-b3bf-f4b252d50a36" />
+
+
+
