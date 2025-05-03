@@ -770,6 +770,40 @@ public:
         }
     }
 
+    void clearScheduleForDay(const string& dayInput) {
+        string day = dayInput;
+        transform(day.begin(), day.end(), day.begin(), ::tolower);
+        map<string, string> dayMap = {
+            {"monday", "Monday"},
+            {"tuesday", "Tuesday"},
+            {"wednesday", "Wednesday"},
+            {"thursday", "Thursday"},
+            {"friday", "Friday"}
+        };
+        if (dayMap.find(day) == dayMap.end()) {
+            cout << "Invalid day: " << dayInput << endl;
+            return;
+        }
+        string properDay = dayMap[day];
+        for (size_t room = 0; room < CLASSROOMS.size(); ++room) {
+            for (int slot = 0; slot < SLOTS_PER_DAY; ++slot) {
+                timetable[properDay][room][slot] = Slot{};
+            }
+        }
+        cout << "Schedule cleared for " << properDay << "." << endl;
+    }
+
+    void clearScheduleForAllDays() {
+        for (const auto& day : DAYS) {
+            for (size_t room = 0; room < CLASSROOMS.size(); ++room) {
+                for (int slot = 0; slot < SLOTS_PER_DAY; ++slot) {
+                    timetable[day][room][slot] = Slot{};
+                }
+            }
+        }
+        cout << "Schedule cleared for all days." << endl;
+    }
+
     void editScheduleForDay(const std::string& dayInput) {
         string day = dayInput;
         // Normalize day input to lowercase for case-insensitive comparison
@@ -1150,10 +1184,10 @@ int main() {
     scheduler.displayTimetable();
 
     while (true) {
-        std::cout << "Options:\n1. View instructor schedule\n2. Edit schedule for a day\n3. Show full timetable\n4. Exit\nEnter choice: ";
+        std::cout << "Options:\n1. View instructor schedule\n2. Edit schedule for a day\n3. Show full timetable\n4. Exit\n5. Clear schedule for a day\n6. Clear schedule for all days\nEnter choice: ";
         int choice;
         if (!(std::cin >> choice)) {
-            std::cout << "Invalid input. Please enter a number between 1 and 4." << std::endl;
+            std::cout << "Invalid input. Please enter a number between 1 and 6." << std::endl;
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             continue;
@@ -1177,12 +1211,20 @@ int main() {
             std::cout << "Exiting program. Here is the full created timetable:" << std::endl;
             scheduler.displayTimetable();
             break;
+        } else if (choice == 5) {
+            std::string day;
+            std::cout << "Enter day to clear schedule (e.g., Monday): ";
+            std::getline(std::cin, day);
+            scheduler.clearScheduleForDay(day);
+        } else if (choice == 6) {
+            scheduler.clearScheduleForAllDays();
         } else {
-            std::cout << "Invalid choice. Please enter a number between 1 and 4." << std::endl;
+            std::cout << "Invalid choice. Please enter a number between 1 and 6." << std::endl;
         }
     }
 
     return 0;
 }
+
 
 ```
