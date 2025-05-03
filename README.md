@@ -1228,3 +1228,39 @@ int main() {
 
 
 ```
+
+
+## Milestone 3
+
+### Optimization and Efficiency Analysis
+
+Below is a table of comparison of algorithms used in our code versus algorithms that could have been used instead. The pros and cons of each of the algorithms were compared and finally an algorithm was chosen to be implemented in the code.
+
+#### AVL Trees vs Alternatives
+
+| Feature            | **Current: AVL Tree**                        | **Alternatives**                             | **Comparison**                                                                                          |
+| ------------------ | -------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Fast Insert/Search | O(log n) using balanced BST                  | Red-Black Tree, Hash Table                   | Red-Black: fewer rotations, slightly faster insertions; Hash Table: O(1) average lookup but no ordering |
+| Ordered Traversal  | Yes (via in-order traversal)                 | Hash Table: ❌, Red-Black Tree: ✅             | AVL is ideal if ordered data output is required                                                         |
+| Space Efficiency   | Moderate (pointers + balance factor)         | Similar (RB), Hash Table may use more memory | Balanced trees trade a bit of space for speed                                                           |
+| Best Use Case      | When you need **sorted** data + fast lookups | Hash Table for unordered rapid access        | ✅ AVL is a strong balanced option for your use case                                                     |
+
+#### Linked List vs Alternatives
+
+| Feature               | **Current: Linked List**       | **Alternatives**                        | **Comparison**                                       |
+| --------------------- | ------------------------------ | --------------------------------------- | ---------------------------------------------------- |
+| Insertion Flexibility | Easy to insert anywhere (O(n)) | Dynamic Array: O(n), Doubly LL: similar | Linked List is good for dynamic, unpredictable sizes |
+| Access Speed          | O(n) to access middle elements | Dynamic Array: O(1) random access       | Arrays win in static data use cases                  |
+| Memory Overhead       | High (due to pointers)         | Arrays are more compact                 | LL uses more memory per element                      |
+| Best Use Case         | Variable-length schedules      | Array: fixed schedules                  | ✅ Linked list is flexible for per-day lecture lists  |
+
+
+#### Maps vs Alternatives
+
+| Feature         | `std::map` (Used)         | `unordered_map`                      |
+| --------------- | ------------------------- | ------------------------------------ |
+| Time Complexity | O(log n)                  | O(1) average, O(n) worst-case        |
+| Ordering        | ✅ Ordered by key          | ❌ Unordered                          |
+| Use-case Fit    | Needed for sorted outputs | Better if you only need fast lookups |
+
+
