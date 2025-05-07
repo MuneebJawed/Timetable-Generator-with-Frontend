@@ -27,7 +27,7 @@ The University Scheduling System is an automated timetable generation tool desig
 ## Tech Stack
 
 Backend: C++
-Frontend: (To be decided, replacing HTML/CSS)
+Frontend: HTML/CSS
 Libraries: STL, File I/O, Boost (optional)
 Database: SQLite/MySQL (optional for future versions)
 
@@ -1280,6 +1280,27 @@ Below is a table of comparison of algorithms used in our code versus algorithms 
 
 
 <img width="457" alt="Screenshot 2025-05-04 at 1 15 03 AM" src="https://github.com/user-attachments/assets/029ea27d-14bc-4550-b3bf-f4b252d50a36" />
+
+
+## Frontend
+
+Files for the frontend have now been uploaded. Simply add these files (app.py and index2.html) to the same directory as the C++ file, then run the app.py file using the line:
+```
+python app.py
+```
+after which you will get the following output:
+```
+ * Serving Flask app 'app'
+ * Debug mode: on
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:5000
+Press CTRL+C to quit
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: your-debugger-pin
+```
+Then simply copy-paste the link generated (http://127.0.0.1:5000, might differ slightly for the end-user) into your web browser.
+
 
 
 
