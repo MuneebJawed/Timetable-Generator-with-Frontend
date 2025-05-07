@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>University Timetable System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body class="bg-gray-100">
+
+  <section class="my-8 px-6 max-w-4xl mx-auto">
+    <h2 class="text-2xl font-bold mb-4">Add Course</h2>
+    <form id="courseForm" class="bg-white shadow rounded p-4 space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <input type="text" id="courseName" placeholder="Course Name" required class="px-4 py-2 border rounded w-full" />
+        <input type="text" id="instructor" placeholder="Instructor Name" required class="px-4 py-2 border rounded w-full" />
+        <input type="number" id="creditHours" placeholder="Credit Hours" min="1" max="6" required class="px-4 py-2 border rounded w-full" />
+        <input type="text" id="lectureHall" placeholder="Lecture Hall (e.g., LH1)" required class="px-4 py-2 border rounded w-full" />
+      </div>
+
+      <div class="mt-4">
+        <label class="block mb-2 font-medium">Days</label>
+        <div class="grid grid-cols-5 gap-2">
+          <label><input type="checkbox" value="Monday" class="dayCheck mr-1" />Mon</label>
+          <label><input type="checkbox" value="Tuesday" class="dayCheck mr-1" />Tue</label>
+          <label><input type="checkbox" value="Wednesday" class="dayCheck mr-1" />Wed</label>
+          <label><input type="checkbox" value="Thursday" class="dayCheck mr-1" />Thu</label>
+          <label><input type="checkbox" value="Friday" class="dayCheck mr-1" />Fri</label>
+        </div>
+      </div>
+
+      <!-- Time Slot Selection -->
+      <div class="mt-4">
+        <label class="block mb-2 font-medium">Select Time Slots</label>
+        <div class="grid grid-cols-2 gap-2">
+          <label><input type="checkbox" value="1" class="slotCheck mr-1" />Slot 1 (8:00 AM - 9:00 AM)</label>
+          <label><input type="checkbox" value="2" class="slotCheck mr-1" />Slot 2 (9:00 AM - 10:00 AM)</label>
+          <label><input type="checkbox" value="3" class="slotCheck mr-1" />Slot 3 (10:00 AM - 11:00 AM)</label>
+          <label><input type="checkbox" value="4" class="slotCheck mr-1" />Slot 4 (11:00 AM - 12:00 PM)</label>
+          <label><input type="checkbox" value="5" class="slotCheck mr-1" />Slot 5 (12:00 PM - 1:00 PM)</label>
+          <label><input type="checkbox" value="6" class="slotCheck mr-1" />Slot 6 (1:00 PM - 2:00 PM)</label>
+          <label><input type="checkbox" value="7" class="slotCheck mr-1" />Slot 7 (2:00 PM - 3:00 PM)</label>
+          <label><input type="checkbox" value="8" class="slotCheck mr-1" />Slot 8 (3:00 PM - 4:00 PM)</label>
+        </div>
+      </div>
+
+      <button type="submit" class="mt-4 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md">Add Course</button>
+    </form>
+  
+    <div class="mt-6">
+      <h2 class="text-xl font-semibold mb-4">Courses List</h2>
+      <ul id="courseList" class="space-y-2 text-sm bg-gray-100 p-4 rounded"></ul>
+    </div>
+  
+    <div class="mt-6">
+      <button id="generateBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">Generate Timetable</button>
+      <div id="generateMessage" class="mt-2 text-sm text-gray-700"></div>
+      <div class="mt-4 border rounded bg-white p-4 overflow-auto" id="generatedTimetable"></div>
+      <div class="mt-4 space-x-2">
+        <button onclick="window.print()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md">Print</button>
+        <button id="downloadPdfBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md">Download PDF</button>
+      </div>
+    </div>
+  </section>
+  
+  <script>
+  const courses = [];
+  
+  // Add Course Handler
+  document.getElementById('courseForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const course = {
+      name: document.getElementById('courseName').value,
+      instructor: document.getElementById('instructor').value,
+      creditHours: parseInt(document.getElementById('creditHours').value),
+      lectureHall: document.getElementById('lectureHall').value,
+      days: Array.from(document.querySelectorAll('.dayCheck:checked')).map(d => d.value),
+      slots: Array.from(document.querySelectorAll('.slotCheck:checked')).map(s => s.value)
+    };
+
+    // Ensure that all fields are filled
+    if (!course.name || !course.instructor || !course.creditHours || !course.lectureHall || course.days.length === 0 || course.slots.length === 0) {
+        alert("Please fill in all fields, including selecting days and slots.");
+        return;
+    }
+
+    courses.push(course);
+    renderCourseList();
+    e.target.reset();
+  });
+  
+  function renderCourseList() {
+    const list = document.getElementById('courseList');
+    list.innerHTML = '';
+    courses.forEach((c, i) => {
+      const item = document.createElement('li');
+      item.textContent = `${c.name} by ${c.instructor} in ${c.lectureHall} on ${c.days.join(', ')} (${c.creditHours} CH) at Slot(s): ${c.slots.join(', ')}`;
+      list.appendChild(item);
+    });
+  }
+  
+  // Generate Timetable
+  document.getElementById('generateBtn').addEventListener('click', () => {
+    const msg = document.getElementById('generateMessage');
+    msg.innerHTML = '<span class="text-blue-600">⏳ Generating timetable...</span>';
+
+    fetch('/generate-timetable', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ courses: courses })
+    })
+    .then(res => res.text())
+    .then(html => {
+        msg.innerHTML = '<span class="text-green-600">✅ Timetable generated successfully</span>';
+        document.getElementById('generatedTimetable').innerHTML = generateTimetableHTML(courses);
+    })
+    .catch(() => {
+        msg.innerHTML = '<span class="text-red-600">❌ Failed to generate timetable.</span>';
+    });
+});
+
+function generateTimetableHTML(courses) {
+    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+    const classrooms = ["LH1", "LH2", "LH3", "LH4", "LH5", "LH6", "LH7", "LH8"];
+    const slots = [
+        "8:00 AM - 9:00 AM", "9:00 AM - 10:00 AM", "10:00 AM - 11:00 AM", 
+        "11:00 AM - 12:00 PM", "12:00 PM - 1:00 PM", "1:00 PM - 2:00 PM", 
+        "2:00 PM - 3:00 PM", "3:00 PM - 4:00 PM"
+    ];
+
+    let timetable = "";
+
+    // Initialize empty timetable structure
+    const timetableData = {};
+    days.forEach(day => {
+        timetableData[day] = Array(slots.length).fill(null).map(() => Array(classrooms.length).fill("Free"));
+    });
+
+    // Place courses in the timetable
+    courses.forEach(course => {
+        course.days.forEach(day => {
+            // Loop through the lecture halls for the current course
+            const roomIndex = classrooms.indexOf(course.lectureHall);
+            if (roomIndex !== -1) {  // If the specified lecture hall is valid
+                course.slots.forEach(slot => {
+                    const slotIndex = parseInt(slot) - 1;  // Convert to zero-indexed slot
+                    if (timetableData[day][slotIndex][roomIndex] === "Free") {
+                        timetableData[day][slotIndex][roomIndex] = `${course.name} (${course.instructor})`;
+                    }
+                });
+            }
+        });
+    });
+
+    // Generate the timetable display
+    days.forEach(day => {
+        timetable += `<h3>Day: ${day}</h3>`;
+        timetable += `<table class="table-auto w-full mb-4">
+                        <thead>
+                            <tr>
+                                <th>Slot</th>`;
+        classrooms.forEach(room => {
+            timetable += `<th>${room}</th>`;
+        });
+        timetable += `</tr>
+                    </thead>
+                    <tbody>`;
+
+        for (let slot = 0; slot < slots.length; slot++) {
+            timetable += `<tr>
+                            <td>${slots[slot]}</td>`;
+            classrooms.forEach((room, roomIndex) => {
+                timetable += `<td>${timetableData[day][slot][roomIndex]}</td>`;
+            });
+            timetable += `</tr>`;
+        }
+
+        timetable += `</tbody></table>`;
+    });
+
+    return timetable;
+}
+
+document.getElementById('downloadPdfBtn').addEventListener('click', function () {
+    const element = document.getElementById('generatedTimetable');
+    const opt = {
+      margin: 0.5,
+      filename: 'Timetable.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+    html2pdf().from(element).set(opt).save();
+});
+  </script>
+
+</body>
+</html>
