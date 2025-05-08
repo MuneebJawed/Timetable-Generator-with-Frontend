@@ -37,7 +37,6 @@ Database: SQLite/MySQL (optional for future versions)
 Clone the Repository
 ```
 git clone https://github.com/your-username/Timetable-Generator-with-Frontend.git
-cd Timetable-Generator-with-Frontend
 ```
 Set Up the Development Environment
 Ensure you have a C++ compiler (GCC, MinGW, or Visual Studio).
